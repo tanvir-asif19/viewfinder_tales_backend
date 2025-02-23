@@ -44,34 +44,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Login Route
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
-  
-    if (!user || user.password !== password) return res.status(400).json({ message: "Invalid credentials" });
-  
-    req.session.userId = user._id;
-    res.json({ message: "Logged in successfully", user: { email: user.email } });
-  });
-  
-  // Check if User is Logged In
-  app.get("/check-auth", (req, res) => {
-    if (req.session.userId) {
-      res.json({ loggedIn: true });
-    } else {
-      res.json({ loggedIn: false });
-    }
-  });
-  
-  // Logout Route
-  app.post("/logout", (req, res) => {
-    req.session.destroy((err) => {
-      if (err) return res.status(500).json({ message: "Logout failed" });
-      res.clearCookie("connect.sid");
-      res.json({ message: "Logged out" });
-    });
-  });// Login Route
-  app.post("/login", async (req, res) => {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
+    const user = await Admin.findOne({ email });
   
     if (!user || user.password !== password) return res.status(400).json({ message: "Invalid credentials" });
   
