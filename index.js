@@ -87,6 +87,11 @@ app.delete("/files/:id", async (req, res) => {
 });
 
 // Update Admin Details
+app.get("/admins", async (req, res) => {
+    const files = await Admin.findOne({email:"tanvirasif1902@gmail.com"})
+    res.status(200).json(files);
+});
+
 app.put("/admin/:id", async (req, res) => {
     const { name, email, contactNumber, socialMedia, description } = req.body;
     const admin = await Admin.findByIdAndUpdate(req.params.id, { name, email, contactNumber, socialMedia, description }, { new: true });
