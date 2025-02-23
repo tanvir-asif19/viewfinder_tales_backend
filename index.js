@@ -19,19 +19,83 @@ app.use(cors({
     "optionsSuccessStatus": 204
   }));
 
+  app.use(
+    session({
+      secret: "your_secret_key",
+      resave: false,
+      saveUninitialized: false,
+      cookie: { secure: false, httpOnly: true },
+    })
+  );
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("MongoDB Connected"))
     .catch(err => console.error("MongoDB Connection Failed", err));
 
 // Visitor Tracking Middleware
-app.use(async (req, res, next) => {
-    const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-    if (ip) {
-        await Visitor.findOneAndUpdate({ ip }, {}, { upsert: true });
+// app.use(async (req, res, next) => {
+//     const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+//     if (ip) {
+//         await Visitor.findOneAndUpdate({ ip }, {}, { upsert: true });
+//     }
+//     next();
+// });
+// Login Route
+app.post("/login", async (req, res) => {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+  
+    if (!user || user.password !== password) return res.status(400).json({ message: "Invalid credentials" });
+  
+    req.session.userId = user._id;
+    res.json({ message: "Logged in successfully", user: { email: user.email } });
+  });
+  
+  // Check if User is Logged In
+  app.get("/check-auth", (req, res) => {
+    if (req.session.userId) {
+      res.json({ loggedIn: true });
+    } else {
+      res.json({ loggedIn: false });
     }
-    next();
-});
+  });
+  
+  // Logout Route
+  app.post("/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) return res.status(500).json({ message: "Logout failed" });
+      res.clearCookie("connect.sid");
+      res.json({ message: "Logged out" });
+    });
+  });// Login Route
+  app.post("/login", async (req, res) => {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+  
+    if (!user || user.password !== password) return res.status(400).json({ message: "Invalid credentials" });
+  
+    req.session.userId = user._id;
+    res.json({ message: "Logged in successfully", user: { email: user.email } });
+  });
+  
+  // Check if User is Logged In
+  app.get("/check-auth", (req, res) => {
+    if (req.session.userId) {
+      res.json({ loggedIn: true });
+    } else {
+      res.json({ loggedIn: false });
+    }
+  });
+  
+  // Logout Route
+  app.post("/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) return res.status(500).json({ message: "Logout failed" });
+      res.clearCookie("connect.sid");
+      res.json({ message: "Logged out" });
+    });
+  });
 
 // Upload Image/Video Route
 app.post("/upload", upload.single("file"), async (req, res) => {
@@ -86,36 +150,36 @@ app.delete("/files/:id", async (req, res) => {
     res.status(200).json({ message: "File deleted successfully" });
 });
 
-// Update Admin Details
-app.get("/admins", async (req, res) => {
-    const files = await Admin.findOne({email:"tanvirasif1902@gmail.com"})
-    res.status(200).json(files);
-});
+// // Update Admin Details
+// app.get("/admins", async (req, res) => {
+//     const files = await Admin.findOne({email:"tanvirasif1902@gmail.com"})
+//     res.status(200).json(files);
+// });
 
-app.put("/admin/:id", async (req, res) => {
-    const { name, email, contactNumber, socialMedia, description } = req.body;
-    const admin = await Admin.findByIdAndUpdate(req.params.id, { name, email, contactNumber, socialMedia, description }, { new: true });
-    if (!admin) return res.status(404).json({ message: "Admin not found" });
+// app.put("/admin/:id", async (req, res) => {
+//     const { name, email, contactNumber, socialMedia, description } = req.body;
+//     const admin = await Admin.findByIdAndUpdate(req.params.id, { name, email, contactNumber, socialMedia, description }, { new: true });
+//     if (!admin) return res.status(404).json({ message: "Admin not found" });
 
-    res.status(200).json(admin);
-});
+//     res.status(200).json(admin);
+// });
 
 // Get Visitor Count
-app.get("/visitors", async (req, res) => {
-    const totalVisitors = await Visitor.countDocuments();
-    res.status(200).json({ totalVisitors });
-});
+// app.get("/visitors", async (req, res) => {
+//     const totalVisitors = await Visitor.countDocuments();
+//     res.status(200).json({ totalVisitors });
+// });
 
-app.post("/visitor", async (req, res) => {
-    try {
-      const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
-      const visit = new Visitor({ ip, timestamp: new Date() });
-      await visit.save();
-      res.status(201).json({ success: true, message: "Visitor recorded" });
-    } catch (error) {
-      res.status(500).json({ success: false, message: "Error recording visitor" });
-    }
-  });
+// app.post("/visitor", async (req, res) => {
+//     try {
+//       const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+//       const visit = new Visitor({ ip, timestamp: new Date() });
+//       await visit.save();
+//       res.status(201).json({ success: true, message: "Visitor recorded" });
+//     } catch (error) {
+//       res.status(500).json({ success: false, message: "Error recording visitor" });
+//     }
+//   });
 
 // Start Server
 const PORT = process.env.PORT || 5000;
